@@ -192,3 +192,5 @@ class Layout:
                                     real_time, 
                                     refresh,
                                     get_stop_event)
+        
+        #?

@@ -3,28 +3,23 @@
     <array id="x" size="[9][9]"> 1..9 </array>
   </variables>
   <constraints>
-    <intension> eq(x[0][2],5) </intension>
-    <intension> eq(x[0][5],8) </intension>
-    <intension> eq(x[0][7],6) </intension>
-    <intension> eq(x[1][3],4) </intension>
-    <intension> eq(x[1][6],3) </intension>
-    <intension> eq(x[2][2],9) </intension>
-    <intension> eq(x[2][8],5) </intension>
-    <intension> eq(x[3][3],2) </intension>
-    <intension> eq(x[3][6],4) </intension>
-    <intension> eq(x[3][8],6) </intension>
-    <intension> eq(x[4][0],1) </intension>
-    <intension> eq(x[4][8],3) </intension>
-    <intension> eq(x[5][0],6) </intension>
-    <intension> eq(x[5][2],4) </intension>
-    <intension> eq(x[5][5],7) </intension>
-    <intension> eq(x[6][0],9) </intension>
-    <intension> eq(x[6][6],7) </intension>
-    <intension> eq(x[7][2],3) </intension>
-    <intension> eq(x[7][5],9) </intension>
-    <intension> eq(x[8][1],7) </intension>
-    <intension> eq(x[8][3],3) </intension>
-    <intension> eq(x[8][6],5) </intension>
+    <intension> eq(x[0][2],2) </intension>
+    <intension> eq(x[1][0],8) </intension>
+    <intension> eq(x[1][1],9) </intension>
+    <intension> eq(x[1][4],4) </intension>
+    <intension> eq(x[2][3],5) </intension>
+    <intension> eq(x[2][7],1) </intension>
+    <intension> eq(x[3][2],5) </intension>
+    <intension> eq(x[3][6],7) </intension>
+    <intension> eq(x[4][4],8) </intension>
+    <intension> eq(x[4][7],3) </intension>
+    <intension> eq(x[5][5],9) </intension>
+    <intension> eq(x[6][8],8) </intension>
+    <intension> eq(x[7][5],2) </intension>
+    <intension> eq(x[7][7],4) </intension>
+    <intension> eq(x[7][8],9) </intension>
+    <intension> eq(x[8][2],6) </intension>
+    <intension> eq(x[8][3],7) </intension>
     <allDifferent> x[0][] </allDifferent>
     <allDifferent> x[1][] </allDifferent>
     <allDifferent> x[2][] </allDifferent>
