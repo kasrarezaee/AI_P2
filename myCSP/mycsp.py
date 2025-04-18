@@ -52,7 +52,7 @@ def my_solve(do_unary_check: bool,
             return False
 
     # backtrack 
-    if not backtrack(do_arc_consistency, do_mrv, do_lcv, refresher):
+    if not backtrack(do_arc_consistency, do_mrv, do_lcv , True, refresher):
         return False
 
     return True
@@ -97,65 +97,73 @@ def node_consistency(refresher: Refresher) -> bool:
         if not v.remaining_domain:
             return False
         
-        print(v.remaining_domain)
         # Update the GUI to reflect domain changes
         refresher.refresh_screen()
 
-    #k = 0
-    #for i in range(9):
-    #    for j in range(9):
-    #        my_variables[i].assign(refresher.board.layout_board[i][j])
-    #        k+=1
-
-    #for v in my_variables:
-    #    print(v.remaining_domain)
-
     return True
 
-def backtrack(do_arc_consistency: bool, do_mrv: bool, do_lcv: bool, refresher: Refresher):
-    """
-    Implements backtracking search with optional heuristics.
-    """
-    # Base case: if assignment is complete, return True
+def backtrack(do_arc_consistency: bool, do_mrv: bool, do_lcv: bool, do_degree: bool, refresher: Refresher) -> bool:  # Added do_degree parameter
     if g.is_assignment_complete():
         return True
 
-    # Select unassigned variable
-    var = select_unassigned_variable(do_mrv)
+    var = select_unassigned_variable(do_mrv, do_degree)  # Pass do_degree to selector
+    for value in order_domain_values(var, do_lcv):
+        # Temporary assignment
+        old_value = var.value
+        var.value = value
+        var.remaining_domain = [value]
+        refresher.refresh_screen()
 
-    # Order domain values
-    ordered_values = order_domain_values(var, do_lcv)
+        # Apply forward checking (or AC-3 if enabled)
+        backup_domains = extract_domains()
+        if do_arc_consistency:
+            consistent = arc_consistency(refresher)  # Use AC-3
+        else:
+            consistent = forward_checking(var, value, refresher)  # Use forward checking
 
-    for value in ordered_values:
-        # Check if value is consistent with current assignment
-        if g.is_assignment_consistent(var):
-            # Try assigning the value
-            old_value = var.value
-            var.value = value
-            var.remaining_domain = [value]  # Set domain to just this value
+        if consistent:
+            result = backtrack(do_arc_consistency, do_mrv, do_lcv, do_degree, refresher)  # Pass do_degree
+            if result:
+                return True
 
-            # Update GUI
-            refresher.refresh_screen()
-
-            # Backup domains before inference
-            backup_domains = extract_domains()
-
-            # Apply inference (forward checking or arc consistency)
-            if inference(do_arc_consistency, refresher):
-                # Recursive call
-                result = backtrack(do_arc_consistency, do_mrv, do_lcv, refresher)
-                if result:
-                    return True
-
-            # Restore domains if we backtrack
-            restore_domains(backup_domains)
-            var.value = old_value
-            var.remaining_domain = backup_domains[var]
-
-            # Update GUI
-            refresher.refresh_screen()
-
+        # Backtrack if no solution found
+        restore_domains(backup_domains)
+        var.value = old_value
+        var.remaining_domain = backup_domains[var]
+        refresher.refresh_screen()
     return False
+
+def backtrack1(do_arc_consistency: bool, do_mrv: bool, do_lcv: bool, refresher: Refresher) -> bool:
+    if g.is_assignment_complete():
+        return True
+
+    var = select_unassigned_variable(do_mrv)
+    for value in order_domain_values(var, do_lcv):
+        # Temporary assignment
+        old_value = var.value
+        var.value = value
+        var.remaining_domain = [value]
+        refresher.refresh_screen()
+
+        # Apply forward checking (or AC-3 if enabled)
+        backup_domains = extract_domains()
+        if do_arc_consistency:
+            consistent = arc_consistency(refresher)  # Use AC-3
+        else:
+            consistent = forward_checking(var, value, refresher)  # Use forward checking
+
+        if consistent:
+            result = backtrack(do_arc_consistency, do_mrv, do_lcv, refresher)
+            if result:
+                return True
+
+        # Backtrack if no solution found
+        restore_domains(backup_domains)
+        var.value = old_value
+        var.remaining_domain = backup_domains[var]
+        refresher.refresh_screen()
+    return False
+
 
 def select_static_order_variable() -> myVariable:
     """
@@ -173,35 +181,51 @@ def static_order_domains(v: myVariable) -> List[int]:
     return v.remaining_domain
 
 
-def backtrack1(do_arc_consistency: bool, do_mrv: bool, do_lcv: bool, refresher: Refresher):
-    """
-    Implements backtracking search with optional heuristics.
-
-    Use `g.is_assignment_complete()` to check if every variable has been assigned a value.
-    Use `g.is_assignment_consistent(v)` to check if the value assigned to v satisfies all the constrains
-    between v and its neighbors. It also checks the unary constraints.
-    Use `extract_domains()` and  `restore_domains()` to backup and restore domains of all the variables.
-    Use `set_doms_to_values()` to set remaining_domain=value for any variable that has been assigned a value. This
-    can be useful before calling `inference()` since inference works with only remaining domains and not
-    assigned values.
-    
-    :param do_arc_consistency: If True, use arc consistency forwarding algorithm inside `inference()` method.
-    :param do_mrv: If True, apply Minimum Remaining Values (MRV) heuristic inside `select_unassigned_variable()` method.
-    :param do_lcv: If True, apply Least Constraining Value (LCV) heuristic inside `order_domain_values()` method.
-    :param refresher: A Refresher object to update the UI during solving.
-    Use `refresher.refresh_screen()` in middle of your code to update the sudoku on screen.
-    :return: True if a solution is found, False otherwise.
-    """
-    # YOUR CODE
-
-def inference(do_arc_consistency: bool, refresher: Refresher) -> bool:
+def inference1(do_arc_consistency: bool, refresher: Refresher) -> bool:
     """
     Uses forward-checking methods to eliminate variable domains that cause contradiction in the future. 
     """
     if do_arc_consistency:
         return arc_consistency(refresher)
+    
+    else:
+        # Forward checking requires knowing the last assigned var/value,
+        # so we assume they're stored in the graph or refresher.
+        # You may need to modify this part based on your actual implementation.
+        last_var = g.neighbors()  # Hypothetical method
+        last_value = last_var.value if last_var else None
+        if last_var and last_value is not None:
+            return forward_checking(last_var, last_value, refresher)
+        return True
+
+    #return True
+def inference(do_arc_consistency: bool, refresher: Refresher, 
+             current_var: myVariable = None, current_value: int = None) -> bool:
+    """
+    Apply either arc consistency or forward checking.
+    Now accepts optional current_var and current_value for forward checking.
+    """
+    if do_arc_consistency:
+        return arc_consistency(refresher)
+    elif current_var is not None and current_value is not None:
+        return forward_checking(current_var, current_value, refresher)
     return True
 
+def forward_checking(var: myVariable, value: int, refresher: Refresher) -> bool:
+    """
+    Prune neighbor domains after assignment.
+    Uses get_neighbors() from the constraint graph.
+    """
+    for neighbor in g.neighbors(var):  # Using existing get_neighbors()
+        if neighbor.value is None:
+            neighbor.remaining_domain = [
+                d for d in neighbor.remaining_domain 
+                if g.is_arc_satisfied(var, neighbor, value, d)
+            ]
+            refresher.refresh_screen()
+            if not neighbor.remaining_domain:
+                return False
+    return True
 
 def arc_consistency(refresher: Refresher) -> bool:
     """
@@ -223,17 +247,6 @@ def arc_consistency(refresher: Refresher) -> bool:
     return True  # All domains consistent
 
 
-def arc_consistency1(refresher: Refresher) -> bool:
-    """
-    Implements the AC-3 algorithm for arc consistency.
-
-    Use `g.get_arcs()` to get a queue containing all arcs in the graph.
-    
-    :param refresher: A Refresher object to update the UI.
-    Use `refresher.refresh_screen()` in middle of your code to update the sudoku on screen.
-    :return: True if arc consistency is maintained, False otherwise.
-    """
-    # YOUR CODE
 
 def revise(v1: myVariable, v2: myVariable) -> bool:
     """
@@ -252,28 +265,37 @@ def revise(v1: myVariable, v2: myVariable) -> bool:
             revised = True
     return revised
 
-def revise1(v1: myVariable, v2: myVariable):
+def select_unassigned_variable(do_mrv: bool, do_degree: bool = False) -> myVariable:  # Added do_degree parameter
     """
-    Revises the domain of v1 by removing values that do not satisfy arc consistency with v2.
+    Selects unassigned variable using MRV and optionally Degree heuristic.
+    """
+    if not do_mrv:
+        return select_static_order_variable()
+    
+    # Find all unassigned variables
+    unassigned = [v for v in my_variables if v.value is None]
+    if not unassigned:
+        return None
 
-    For checking the satisfiability of any arc, use g.is_arc_satisfied(v1, v2, x1, x2) so 
-    the order of values for variables remains consistent.
+    # MRV first
+    if do_mrv:
+        min_domain = min(len(v.remaining_domain) for v in unassigned)
+        candidates = [v for v in unassigned if len(v.remaining_domain) == min_domain]
+        
+        # Apply Degree heuristic if multiple candidates
+        if do_degree and len(candidates) > 1:
+            return max([(v, len(g.neighbors(v))) for v in candidates], key=lambda x: x[1])[0]
+        return candidates[0]
     
-    :param v1: First variable.
-    :param v2: Second variable.
-    :return: True if the domain of v1 was revised, False otherwise.
-    """
-    # YOUR CODE
-    
-def select_unassigned_variable(do_mrv: bool) -> myVariable:
+    return select_static_order_variable()
+
+
+def select_unassigned_variable1(do_mrv: bool) -> myVariable:
     if do_mrv:
         return minimum_remaining_values()
     else:
         return select_static_order_variable()
     
-def select_static_order_variable1() -> myVariable:
-    pass
-    # YOUR CODE
 
 def minimum_remaining_values() -> myVariable:
     """
@@ -307,10 +329,6 @@ def order_domain_values(v: myVariable, do_lcv: bool) -> List[int]:
     else:
         return static_order_domains(v)
     
-def static_order_domains1(v: myVariable) -> List[int]:
-    pass
-    # YOUR CODE
-
 def least_constraining_value(v: myVariable) -> List[int]:
     """
     Orders domain values by the Least Constraining Value (LCV) heuristic.
@@ -321,7 +339,7 @@ def least_constraining_value(v: myVariable) -> List[int]:
     for value in v.remaining_domain:
         # Count how many values this would eliminate from neighbors' domains
         eliminations = 0
-        for neighbor in g.get_neighbors(v):
+        for neighbor in g.neighbors(v):
             if neighbor.value is not None:
                 continue  # Skip assigned neighbors
             for neighbor_value in neighbor.remaining_domain:

@@ -152,6 +152,7 @@ class Layout:
             for i in range(9):
                 for j in range(9):
                     board.answer_board[i][j] = x[i][j].value
+
             return True
         return False
 
