@@ -99,18 +99,18 @@ class Layout:
 
     # Initialize variables (9x9 grid with domain 1-9)
         x = myVarArray("test" , size=[9, 9], dom=range(1, 10))
-
+        clues = board.layout_board
+        
     # Apply unary constraints (fixed initial values)
         for i in range(9):
             for j in range(9):
-                if self.clues[i][j] > 0:
-                    #my_satisfy(myUnaryConstraint(x[i][j], self.clues[i][j]))
+                if clues[i][j] > 0:
                     my_satisfy(myUnaryConstraint(
                         x[i][j], 
-                        relation=lambda val: val == self.clues[i][j],  # Enforces val == clue
-                        #self.clues[i][j]  # Optional: pass the expected value for clarity
-                        num = None
+                        relation="=",
+                        num=clues[i][j]
                     ))
+                    
     # Apply AllDifferent constraints for rows
         for row in x:
             my_satisfy(myAllDifferent(row))

@@ -68,14 +68,15 @@ def my_clear():
 def node_consistency(refresher: Refresher) -> bool:
     """
     Applies node consistency by filtering values that do not satisfy unary constraints.
-
+8
     Use `g.is_node_satisfied(v, d)` to check if `d` is satisfied for variable `v`
     
     :param refresher: A Refresher object to update the UI.
     :return: True if node consistency is maintained, False otherwise.
     """
+
     for v in my_variables:
-        # Skip variables that already have a value assigned
+        # Skip variables that already have a value assigned 
         if v.value is not None:
             continue
             
@@ -83,6 +84,8 @@ def node_consistency(refresher: Refresher) -> bool:
         valid_values = []
         
         # Check each value in the variable's domain
+        
+
         for d in v.remaining_domain:
             if g.is_node_satisfied(v, d):
                 valid_values.append(d)
@@ -94,9 +97,19 @@ def node_consistency(refresher: Refresher) -> bool:
         if not v.remaining_domain:
             return False
         
+        print(v.remaining_domain)
         # Update the GUI to reflect domain changes
         refresher.refresh_screen()
-    
+
+    #k = 0
+    #for i in range(9):
+    #    for j in range(9):
+    #        my_variables[i].assign(refresher.board.layout_board[i][j])
+    #        k+=1
+
+    #for v in my_variables:
+    #    print(v.remaining_domain)
+
     return True
 
 def backtrack(do_arc_consistency: bool, do_mrv: bool, do_lcv: bool, refresher: Refresher):

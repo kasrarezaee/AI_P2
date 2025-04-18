@@ -226,6 +226,7 @@ class myConstraintGraph:
         Returns:
             bool: True if all unary constraints are satisfied, False otherwise.
         """
+        
         return all(c.is_value_satisfied(x) for c in self.unary_graph[v])
     
     def neighbors(self, v: myVariable) -> List[myVariable]:
