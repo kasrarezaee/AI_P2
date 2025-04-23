@@ -94,14 +94,14 @@ class Layout:
         from myCSP.mycsp import my_satisfy, my_solve, my_clear, myVarArray, myUnaryConstraint, myAllDifferent
 
     
-    # Clear previous CSP state
+   
         my_clear()
 
-    # Initialize variables (9x9 grid with domain 1-9)
+   
         x = myVarArray("test" , size=[9, 9], dom=range(1, 10))
         clues = board.layout_board
         
-    # Apply unary constraints (fixed initial values)
+   
         for i in range(9):
             for j in range(9):
                 if clues[i][j] > 0:
@@ -111,16 +111,16 @@ class Layout:
                         num=clues[i][j]
                     ))
                     
-    # Apply AllDifferent constraints for rows
+   
         for row in x:
             my_satisfy(myAllDifferent(row))
 
-    # Apply AllDifferent constraints for columns
+   
         for j in range(9):
             column = [x[i][j] for i in range(9)]
             my_satisfy(myAllDifferent(column))
 
-    # Apply AllDifferent constraints for 3x3 blocks
+   
         for block_row in range(3):
             for block_col in range(3):
                 block = [
@@ -130,17 +130,16 @@ class Layout:
                 ]
                 my_satisfy(myAllDifferent(block))
 
-    # Initialize Refresher for GUI updates
-        #refresher = Refresher(board, refresh, get_stop_event)
+   
         refresher = Refresher(
-            vars=x,                # The myVarArray of variables
-            board=board,           # The Board object
-            real_time=real_time,   # Whether to update in real-time
-            refresh=refresh,       # GUI update callback
-            get_stop_event=get_stop_event  # Stop-check callback
+            vars=x,                
+            board=board,           
+            real_time=real_time,   
+            refresh=refresh,       
+            get_stop_event=get_stop_event  
         )
 
-    # Solve using mycsp
+    
         if my_solve(
             do_unary_check=do_unary_check,
             do_arc_consistency=do_arc_consistency,
@@ -148,11 +147,11 @@ class Layout:
             do_lcv=do_lcv,
             refresher=refresher
         ):
-        # Copy solution to board.answer_board
+            
             for i in range(9):
                 for j in range(9):
                     board.answer_board[i][j] = x[i][j].value
-
+                    
             return True
         return False
 
@@ -193,4 +192,4 @@ class Layout:
                                     refresh,
                                     get_stop_event)
         
-        #?
+        #???

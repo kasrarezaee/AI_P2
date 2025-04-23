@@ -50,7 +50,7 @@ def my_solve(do_unary_check: bool,
     if do_unary_check:
         if not node_consistency(refresher):
             return False
-
+    
     # backtrack 
     if not backtrack(do_arc_consistency, do_mrv, do_lcv , True, refresher):
         return False
@@ -76,28 +76,25 @@ def node_consistency(refresher: Refresher) -> bool:
     """
 
     for v in my_variables:
-        # Skip variables that already have a value assigned 
+         
         if v.value is not None:
             continue
             
-        # Create a list to store values that satisfy the unary constraints
-        valid_values = []
         
-        # Check each value in the variable's domain
+        valid_values = []
         
 
         for d in v.remaining_domain:
             if g.is_node_satisfied(v, d):
                 valid_values.append(d)
         
-        # Update the variable's domain with only valid values
+        # Update domain with valid values
         v.remaining_domain = valid_values
         
-        # If any variable's domain becomes empty, the puzzle is unsolvable
+        # If domain is empty, unsolvable
         if not v.remaining_domain:
             return False
         
-        # Update the GUI to reflect domain changes
         refresher.refresh_screen()
 
     return True
@@ -106,64 +103,30 @@ def backtrack(do_arc_consistency: bool, do_mrv: bool, do_lcv: bool, do_degree: b
     if g.is_assignment_complete():
         return True
 
-    var = select_unassigned_variable(do_mrv, do_degree)  # Pass do_degree to selector
+    var = select_unassigned_variable(do_mrv, do_degree)
     for value in order_domain_values(var, do_lcv):
-        # Temporary assignment
+        
         old_value = var.value
         var.value = value
         var.remaining_domain = [value]
         refresher.refresh_screen()
 
-        # Apply forward checking (or AC-3 if enabled)
         backup_domains = extract_domains()
         if do_arc_consistency:
-            consistent = arc_consistency(refresher)  # Use AC-3
+            consistent = arc_consistency(refresher)  
         else:
-            consistent = forward_checking(var, value, refresher)  # Use forward checking
+            consistent = forward_checking(var, value, refresher)
 
         if consistent:
-            result = backtrack(do_arc_consistency, do_mrv, do_lcv, do_degree, refresher)  # Pass do_degree
+            result = backtrack(do_arc_consistency, do_mrv, do_lcv, do_degree, refresher)  
             if result:
                 return True
 
-        # Backtrack if no solution found
         restore_domains(backup_domains)
         var.value = old_value
         var.remaining_domain = backup_domains[var]
         refresher.refresh_screen()
     return False
-
-def backtrack1(do_arc_consistency: bool, do_mrv: bool, do_lcv: bool, refresher: Refresher) -> bool:
-    if g.is_assignment_complete():
-        return True
-
-    var = select_unassigned_variable(do_mrv)
-    for value in order_domain_values(var, do_lcv):
-        # Temporary assignment
-        old_value = var.value
-        var.value = value
-        var.remaining_domain = [value]
-        refresher.refresh_screen()
-
-        # Apply forward checking (or AC-3 if enabled)
-        backup_domains = extract_domains()
-        if do_arc_consistency:
-            consistent = arc_consistency(refresher)  # Use AC-3
-        else:
-            consistent = forward_checking(var, value, refresher)  # Use forward checking
-
-        if consistent:
-            result = backtrack(do_arc_consistency, do_mrv, do_lcv, refresher)
-            if result:
-                return True
-
-        # Backtrack if no solution found
-        restore_domains(backup_domains)
-        var.value = old_value
-        var.remaining_domain = backup_domains[var]
-        refresher.refresh_screen()
-    return False
-
 
 def select_static_order_variable() -> myVariable:
     """
@@ -180,25 +143,6 @@ def static_order_domains(v: myVariable) -> List[int]:
     """
     return v.remaining_domain
 
-
-def inference1(do_arc_consistency: bool, refresher: Refresher) -> bool:
-    """
-    Uses forward-checking methods to eliminate variable domains that cause contradiction in the future. 
-    """
-    if do_arc_consistency:
-        return arc_consistency(refresher)
-    
-    else:
-        # Forward checking requires knowing the last assigned var/value,
-        # so we assume they're stored in the graph or refresher.
-        # You may need to modify this part based on your actual implementation.
-        last_var = g.neighbors()  # Hypothetical method
-        last_value = last_var.value if last_var else None
-        if last_var and last_value is not None:
-            return forward_checking(last_var, last_value, refresher)
-        return True
-
-    #return True
 def inference(do_arc_consistency: bool, refresher: Refresher, 
              current_var: myVariable = None, current_value: int = None) -> bool:
     """
@@ -216,7 +160,7 @@ def forward_checking(var: myVariable, value: int, refresher: Refresher) -> bool:
     Prune neighbor domains after assignment.
     Uses get_neighbors() from the constraint graph.
     """
-    for neighbor in g.neighbors(var):  # Using existing get_neighbors()
+    for neighbor in g.neighbors(var):  
         if neighbor.value is None:
             neighbor.remaining_domain = [
                 d for d in neighbor.remaining_domain 
@@ -232,19 +176,18 @@ def arc_consistency(refresher: Refresher) -> bool:
     Enforces arc consistency using AC-3 algorithm with Queue.
     Returns False if any domain becomes empty (inconsistency), True otherwise.
     """
-    queue = g.get_arcs()  # Get the Queue object
-
-    while not queue.empty():  # While queue is not empty
-        v1, v2 = queue.get()  # Dequeue an arc (v1, v2)
+    queue = g.get_arcs()  
+    while not queue.empty():  
+        v1, v2 = queue.get()  
         if revise(v1, v2):
             if not v1.remaining_domain:
-                return False  # Inconsistent domain
-            # Add neighboring arcs (vk, v1) where vk != v2
+                return False  
+            
             for vk in g.neighbors(v1):
                 if vk != v2:
                     queue.put((vk, v1))
-            refresher.refresh_screen()  # Optional GUI update
-    return True  # All domains consistent
+            refresher.refresh_screen()
+    return True  
 
 
 
@@ -254,35 +197,33 @@ def revise(v1: myVariable, v2: myVariable) -> bool:
     Returns True if the domain was revised, False otherwise.
     """
     revised = False
-    for x in list(v1.remaining_domain):  # Iterate over a copy of the domain
-        # Check if there exists any y in v2's domain that satisfies the constraint
+    for x in list(v1.remaining_domain):
         has_support = any(
             g.is_arc_satisfied(v1, v2, x, y)
             for y in v2.remaining_domain
         )
         if not has_support:
-            v1.remaining_domain.remove(x)  # Remove invalid value
+            v1.remaining_domain.remove(x)
             revised = True
     return revised
 
-def select_unassigned_variable(do_mrv: bool, do_degree: bool = False) -> myVariable:  # Added do_degree parameter
+def select_unassigned_variable(do_mrv: bool, do_degree: bool = False) -> myVariable:  
     """
     Selects unassigned variable using MRV and optionally Degree heuristic.
     """
     if not do_mrv:
         return select_static_order_variable()
     
-    # Find all unassigned variables
+
     unassigned = [v for v in my_variables if v.value is None]
     if not unassigned:
         return None
 
-    # MRV first
+
     if do_mrv:
         min_domain = min(len(v.remaining_domain) for v in unassigned)
         candidates = [v for v in unassigned if len(v.remaining_domain) == min_domain]
         
-        # Apply Degree heuristic if multiple candidates
         if do_degree and len(candidates) > 1:
             return max([(v, len(g.neighbors(v))) for v in candidates], key=lambda x: x[1])[0]
         return candidates[0]
@@ -290,11 +231,6 @@ def select_unassigned_variable(do_mrv: bool, do_degree: bool = False) -> myVaria
     return select_static_order_variable()
 
 
-def select_unassigned_variable1(do_mrv: bool) -> myVariable:
-    if do_mrv:
-        return minimum_remaining_values()
-    else:
-        return select_static_order_variable()
     
 
 def minimum_remaining_values() -> myVariable:
@@ -306,22 +242,16 @@ def minimum_remaining_values() -> myVariable:
     selected_var = None
 
     for var in my_variables:
-        if var.value is None:  # Only consider unassigned variables
+        if var.value is None: 
             domain_size = len(var.remaining_domain)
             if domain_size < min_domain_size:
                 min_domain_size = domain_size
                 selected_var = var
-            # Early exit if domain size is 1 (optimal case)
+        
             if domain_size == 1:
                 break
 
     return selected_var
-
-def minimum_remaining_values1() -> myVariable:
-    """
-    Returns a variable with the lowest remaining domain count.
-    """
-    # YOUR CODE
         
 def order_domain_values(v: myVariable, do_lcv: bool) -> List[int]:
     if do_lcv:
@@ -337,26 +267,19 @@ def least_constraining_value(v: myVariable) -> List[int]:
     value_scores = []
     
     for value in v.remaining_domain:
-        # Count how many values this would eliminate from neighbors' domains
+        
         eliminations = 0
         for neighbor in g.neighbors(v):
             if neighbor.value is not None:
-                continue  # Skip assigned neighbors
+                continue  
             for neighbor_value in neighbor.remaining_domain:
                 if not g.is_arc_satisfied(v, neighbor, value, neighbor_value):
                     eliminations += 1
         value_scores.append((value, eliminations))
     
-    # Sort by least eliminations first (ascending order)
+    
     value_scores.sort(key=lambda x: x[1])
     return [value for value, _ in value_scores]
-
-def least_constraining_value1(v: myVariable) -> List[int]:
-    """
-    Orders the values in the domain of `v` based on how few constraints they impose on neighboring variables.  
-    Values that allow the most options for neighboring variables are prioritized.
-    """
-    # YOUR CODE
 
 def extract_domains() -> Dict[myVariable, List[int]]:
     """
